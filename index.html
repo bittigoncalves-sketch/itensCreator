@@ -1,0 +1,81 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Criador de Add-ons para Minecraft</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              'gray': {
+                '800': '#1F2937',
+                '900': '#111827',
+              },
+              'minecraft-green': {
+                '500': '#5A9C46',
+                '600': '#4A8D35',
+                '700': '#3A7C24',
+              },
+              'minecraft-blue': {
+                '500': '#4A7F9C',
+                '600': '#3A6E8D',
+                '700': '#2A5D7C',
+              },
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        background-color: #f3f4f6;
+        background-image:
+          linear-gradient(rgba(17, 24, 39, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(17, 24, 39, 0.04) 1px, transparent 1px);
+        background-size: 20px 20px;
+      }
+      .dark body {
+        background-color: #111827;
+        background-image:
+          linear-gradient(rgba(249, 250, 251, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(249, 250, 251, 0.04) 1px, transparent 1px);
+      }
+      .bg-checkerboard {
+        background-image:
+          linear-gradient(45deg, #e5e7eb 25%, transparent 25%),
+          linear-gradient(-45deg, #e5e7eb 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, #e5e7eb 75%),
+          linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
+        background-size: 20px 20px;
+        background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+      }
+      .dark .bg-checkerboard {
+        background-image:
+          linear-gradient(45deg, #4b5563 25%, transparent 25%),
+          linear-gradient(-45deg, #4b5563 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, #4b5563 75%),
+          linear-gradient(-45deg, transparent 75%, #4b5563 75%);
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.28.0",
+    "jszip": "https://aistudiocdn.com/jszip@^3.10.1"
+  }
+}
+</script>
+</head>
+  <body class="bg-gray-100 dark:bg-gray-900">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
