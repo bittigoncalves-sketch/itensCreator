@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import JSZip from 'jszip';
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Modality } from "@google/genai";
 import Card from '../components/common/Card';
 import Spinner from '../components/common/Spinner';
 import { DownloadIcon, UploadIcon, PhotoIcon, SparklesIcon, SaveIcon, SearchIcon, EyeIcon, FileCodeIcon } from '../components/common/Icons';
@@ -145,28 +145,7 @@ const CreatorPage: React.FC<CreatorPageProps> = ({ initialPrompt, clearInitialPr
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
-      // ETAPA 1: Gerar Nome e Descrição
-      setLoadingStep("Criando nome e descrição...");
-      const nameGenResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: `Com base na ideia de add-on para Minecraft do usuário: "${prompt}", gere um nome curto e cativante para o add-on (em português) e uma descrição de uma frase (em português). Retorne o resultado como um objeto JSON com as chaves "name" e "description".`,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING },
-              description: { type: Type.STRING },
-            },
-            required: ["name", "description"]
-          }
-        }
-      });
-      const { name, description } = JSON.parse(nameGenResponse.text);
-      setAddonName(name);
-      setAddonDescription(description);
-      
-      // ETAPA 2: Pesquisa com Grounding
+      // ETAPA 1: Pesquisa com Grounding
       setLoadingStep("Pesquisando referências na web...");
       const groundingResponse = await ai.models.generateContent({
         model: "gemini-2.5-flash",
@@ -176,107 +155,72 @@ const CreatorPage: React.FC<CreatorPageProps> = ({ initialPrompt, clearInitialPr
       const groundingText = groundingResponse.text;
       setSearchSources(groundingResponse.candidates?.[0]?.groundingMetadata?.groundingChunks ?? null);
 
-      // ETAPA 3: Gerar arquivos de código
-      setLoadingStep("Gerando arquivos do add-on com Gemini Pro...");
+      // ETAPA 2: Geração consolidada de código, metadados e avaliação
+      setLoadingStep("Gerando arquivos, nome e avaliação...");
       const versionArray = version.split('.').map(Number);
-      const codeGenPrompt = `Você é um desenvolvedor especialista em Add-ons do Minecraft criando arquivos para o Minecraft Bedrock Edition. Sua tarefa é gerar todos os arquivos necessários para um item personalizado com base na solicitação de um usuário, seguindo requisitos técnicos rigorosos para garantir que o add-on funcione corretamente no jogo.
+      
+      const megaGenPrompt = `Você é um desenvolvedor especialista em Add-ons do Minecraft criando arquivos para o Minecraft Bedrock Edition. Sua tarefa é gerar um objeto JSON completo contendo todos os arquivos necessários para um item personalizado, juntamente com metadados e uma avaliação, com base na solicitação do usuário. Siga todos os requisitos técnicos rigorosamente.
 
       Solicitação do Usuário: "${prompt}"
       Resumo da Pesquisa na Web: "${groundingText}"
-      Nome do Add-on: "${name}"
-      Descrição do Add-on: "${description}"
       Versão do Minecraft: "${version}"
 
-      **Instruções Críticas para Funcionalidade:**
-      1.  **Formato de Saída:** Responda APENAS com um único objeto JSON dentro de um bloco de código \`\`\`json. As chaves são os caminhos completos dos arquivos (ex: "behavior_pack/items/emerald_sword.json") e os valores são o conteúdo do arquivo como string.
-      2.  **Manifestos (\`manifest.json\`):**
-          - Gere um para o pacote de comportamento (BP) e um para o pacote de recursos (RP).
-          - **CRÍTICO:** Ambos os manifestos DEVEM usar \`"format_version": 2\`.
-          - O \`header.name\` deve ser \`"[BP] ${name}"\` para BP e \`"[RP] ${name}"\` para RP.
-          - O \`header.description\` deve ser "${description}".
-          - O \`header.version\` deve ser \`[1, 0, 0]\`.
-          - O \`header.min_engine_version\` deve ser exatamente \`${JSON.stringify(versionArray)}\`.
-          - **CRÍTICO:** Gere quatro (4) UUIDs v4 completamente diferentes e únicos. Um para cada \`header.uuid\` e um para cada \`modules[0].uuid\`. Não use UUIDs repetidos ou de placeholder.
-          - Cada manifesto deve listar o outro pacote como uma dependência na seção \`dependencies\`, usando o UUID do header do outro pacote.
-      3.  **Definição do Item (Pacote de Comportamento):**
-          - Crie o arquivo JSON do item em \`behavior_pack/items/\`. O nome do arquivo deve ser relevante (ex: \`emerald_sword.json\`).
-          - A \`"format_version"\` do arquivo do item DEVE ser \`"${version}"\`.
-          - O identificador do item (ex: \`custom:emerald_sword\`) deve ter um namespace e ser usado de forma consistente em todos os arquivos.
+      **Instruções Críticas para Geração de Arquivos (Siga-as EXATAMENTE):**
+
+      1.  **Estrutura de Arquivos:** O JSON de saída deve ter uma chave "files" contendo um ARRAY de objetos. Cada objeto no array deve ter duas chaves: "path" (string, o caminho completo do arquivo, ex: "behavior_pack/items/emerald_sword.json") e "content" (string, o conteúdo do arquivo).
+
+      2.  **Manifestos (\`manifest.json\`) - A PARTE MAIS IMPORTANTE:**
+          - Crie dois manifestos: um em \`behavior_pack/manifest.json\` e outro em \`resource_pack/manifest.json\`.
+          - **MANDATÓRIO:** Ambos os manifestos DEVEM usar \`"format_version": 2\`.
+          - **UUIDs - CAUSA Nº 1 DE FALHAS:** Gere quatro (4) UUIDs v4 que sejam **completamente diferentes e únicos**. Um para cada \`header/uuid\` e \`modules/uuid\` nos dois pacotes. **NUNCA** reutilize um UUID.
+          - **Nomes e Versões:** O nome do pacote deve ser baseado no nome do add-on gerado. A descrição deve usar a descrição gerada. \`header.version\`: \`[1, 0, 0]\`. \`header.min_engine_version\`: Use exatamente \`${JSON.stringify(versionArray)}\`.
+          - **Dependências:** Cada manifesto DEVE ter uma seção de \`dependencies\` que aponte para o UUID do \`header\` do outro pacote.
+
+      3.  **Definição do Item (Arquivo de Comportamento - .json):**
+          - Salve em \`behavior_pack/items/\` com um nome lógico.
+          - A \`"format_version"\` do arquivo do item DEVE corresponder à versão do jogo: \`"${version}"\`.
+          - Use um identificador com namespace (ex: \`custom:emerald_sword\`) consistentemente.
           - O componente \`minecraft:icon\` deve usar um alias de textura simples (ex: \`"texture": "emerald_sword"\`).
+
       4.  **Arquivos de Textura (Pacote de Recursos):**
           - Crie \`resource_pack/textures/item_texture.json\`.
-          - Dentro de \`item_texture.json\`, mapeie o alias da textura do pacote de comportamento (ex: \`"emerald_sword"\`) para o caminho \`"textures/items/custom_item"\`. O caminho DEVE ser exatamente este, sem a extensão .png.
-          - NÃO crie \`render_controllers\`.
-      5.  **Localização / Nomes (Pacote de Recursos):**
-          - Crie \`resource_pack/texts/en_US.lang\`. Adicione a entrada para o nome do item (ex: \`item.custom:emerald_sword.name=Emerald Sword\`).
-          - Crie também \`resource_pack/texts/pt_BR.lang\`. Adicione a mesma entrada, mas com o nome do item traduzido para o português (ex: \`item.custom:emerald_sword.name=Espada de Esmeralda\`).
+          - Mapeie o alias de textura para o caminho físico \`"textures/items/custom_item"\` (sem .png).
+          - **NÃO** gere arquivos \`render_controllers\`.
 
-      Gere o objeto JSON completo agora, seguindo todas as regras estritamente.`;
+      5.  **Nomes de Itens (Arquivos de Localização - .lang):**
+          - Crie \`resource_pack/texts/en_US.lang\` e \`resource_pack/texts/pt_BR.lang\`.
+          - A chave (ex: \`item.custom:emerald_sword.name\`) deve corresponder ao identificador do item.
+
+      **Instruções para Metadados e Avaliação Adicionais:**
+
+      Sua resposta JSON DEVE incluir, no nível superior, as seguintes chaves:
+      - **\`name\`**: (string) Um nome curto e cativante para o add-on em português.
+      - **\`description\`**: (string) Uma descrição de uma frase para o add-on em português.
+      - **\`textureSize\`**: (number) O tamanho de textura quadrado mais apropriado (escolha entre 16, 32, 64 ou 128) com base na complexidade do item.
+      - **\`files\`**: (array) O array de objetos de arquivo (\`{path, content}\`), como instruído acima.
+      - **\`evaluation\`**: (object) Uma avaliação do add-on que você gerou usando o framework SAFE (Simplicity, Appropriateness, Functionality, Elegance), no formato de um objeto com as chaves "complexity", "quality", "innovation", "common", "summary".
+
+      **Formato Final OBRIGATÓRIO:**
+      Sua única resposta DEVE SER um único objeto JSON válido que corresponda ao schema fornecido. Não inclua nenhum texto, explicação ou anotação fora do objeto JSON.`;
       
-      const codeGenResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
-        contents: codeGenPrompt
-      });
-      const files = parseJsonFromMarkdown(codeGenResponse.text);
-      setGeneratedFiles(files);
-
-      // ETAPA 3.5: Determinar Tamanho da Textura
-      setLoadingStep("Analisando complexidade do item...");
-      const sizeSelectionResponse = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: `Based on the complexity of the Minecraft item description "${prompt}", what is the most appropriate square, power-of-two texture size? Choose from 16, 32, 64, or 128. Simple items should use smaller sizes (e.g., 16, 32). Complex items should use larger sizes but MUST NOT exceed 128. Respond with only the number representing the side length in pixels.`,
-      });
-      const textureSizeText = sizeSelectionResponse.text.trim();
-      let textureSize = parseInt(textureSizeText, 10) || 32; // Padrão de 32x32 se a análise falhar
-
-      // Verificação de segurança para garantir que o tamanho não exceda 128 e seja uma potência de 2
-      if (textureSize > 128) {
-        textureSize = 128;
-      }
-      // Arredonda para a potência de 2 mais próxima para garantir compatibilidade
-      const validSizes = [16, 32, 64, 128];
-      textureSize = validSizes.reduce((prev, curr) => 
-        (Math.abs(curr - textureSize) < Math.abs(prev - textureSize) ? curr : prev)
-      );
-
-      // ETAPA 4: Gerar pixel art
-      setLoadingStep(`Criando textura de ${textureSize}x${textureSize}px...`);
-      const imageGenPrompt = `Create a single, square, ${textureSize}x${textureSize} pixel art texture for a Minecraft item based on this description: "${prompt}".
-**Style Rules:**
-- The artwork should look like it belongs in Minecraft.
-- The item should be centered.
-- The background MUST be transparent.`;
-
-      const imageResponse = await ai.models.generateImages({
-        model: 'imagen-4.0-generate-001',
-        prompt: imageGenPrompt,
-        config: { numberOfImages: 1, outputMimeType: 'image/png' },
-      });
-      const originalImageBase64 = `data:image/png;base64,${imageResponse.generatedImages[0].image.imageBytes}`;
-      
-      // Redimensiona a imagem para garantir o tamanho exato de pixels
-      const resizedImageBase64 = await resizeImage(originalImageBase64, textureSize, textureSize);
-      setPixelArt(resizedImageBase64);
-
-      // ETAPA 5: Analisar Imagem
-      setLoadingStep("Analisando a qualidade da imagem...");
-      const imageAnalysisBase64 = resizedImageBase64.split(',')[1];
-      const imagePart = { inlineData: { mimeType: 'image/png', data: imageAnalysisBase64 }};
-      const textPart = { text: `Please analyze this ${textureSize}x${textureSize} pixel art image intended for a Minecraft addon based on the description: "${prompt}". Evaluate its quality, clarity, and adherence to the Minecraft art style. Provide a short, constructive critique.` };
-      const analysisResponse = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: { parts: [imagePart, textPart] },
-      });
-      setImageAnalysis(analysisResponse.text);
-
-      // ETAPA 6: Avaliar Add-on com SAFE
-      setLoadingStep("Avaliando o add-on com o framework SAFE...");
-      const evalResponse = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: `Evaluate the following Minecraft addon files based on the SAFE framework (Simplicity, Appropriateness, Functionality, Elegance). Files: ${JSON.stringify(files)}.`,
-          config: {
-              responseMimeType: "application/json",
-              responseSchema: {
+      const megaSchema = {
+          type: Type.OBJECT,
+          properties: {
+              name: { type: Type.STRING },
+              description: { type: Type.STRING },
+              textureSize: { type: Type.NUMBER },
+              files: {
+                  type: Type.ARRAY,
+                  items: {
+                      type: Type.OBJECT,
+                      properties: {
+                          path: { type: Type.STRING },
+                          content: { type: Type.STRING }
+                      },
+                      required: ["path", "content"]
+                  }
+              },
+              evaluation: {
                   type: Type.OBJECT,
                   properties: {
                       complexity: { type: Type.STRING },
@@ -287,9 +231,89 @@ const CreatorPage: React.FC<CreatorPageProps> = ({ initialPrompt, clearInitialPr
                   },
                   required: ["complexity", "quality", "innovation", "common", "summary"]
               }
-          }
+          },
+          required: ["name", "description", "textureSize", "files", "evaluation"]
+      };
+
+      const megaGenResponse = await ai.models.generateContent({
+        model: 'gemini-2.5-pro',
+        contents: megaGenPrompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: megaSchema,
+        }
       });
-      setEvaluation(JSON.parse(evalResponse.text));
+      
+      const result = JSON.parse(megaGenResponse.text);
+      const { name, description, files: filesArray, evaluation } = result;
+
+      const filesObject = filesArray.reduce((acc: Record<string, string>, file: {path: string, content: string}) => {
+          acc[file.path] = file.content;
+          return acc;
+      }, {});
+      
+      let textureSize = result.textureSize || 32;
+
+      setAddonName(name);
+      setAddonDescription(description);
+      setGeneratedFiles(filesObject);
+      setEvaluation(evaluation);
+
+      // Verificação de segurança para garantir que o tamanho não exceda 128 e seja uma potência de 2
+      if (textureSize > 128) {
+        textureSize = 128;
+      }
+      const validSizes = [16, 32, 64, 128];
+      textureSize = validSizes.reduce((prev, curr) => 
+        (Math.abs(curr - textureSize) < Math.abs(prev - textureSize) ? curr : prev)
+      );
+
+      // ETAPA 3: Gerar pixel art
+      setLoadingStep(`Criando textura de ${textureSize}x${textureSize}px...`);
+      const imageGenPrompt = `Create a single, square, ${textureSize}x${textureSize} pixel art texture for a Minecraft item based on this description: "${prompt}".
+**Style Rules:**
+- The artwork should look like it belongs in Minecraft.
+- The item should be centered.
+- The background MUST be transparent.`;
+      
+      const imageResponse = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: {
+            parts: [{ text: imageGenPrompt }],
+        },
+        config: {
+            responseModalities: [Modality.IMAGE],
+        },
+      });
+
+      let originalImageBase64 = '';
+      const firstCandidate = imageResponse.candidates?.[0];
+      if (firstCandidate) {
+        for (const part of firstCandidate.content.parts) {
+          if (part.inlineData) {
+            originalImageBase64 = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            break;
+          }
+        }
+      }
+
+      if (!originalImageBase64) {
+        throw new Error("A IA não conseguiu gerar uma imagem para a textura do item.");
+      }
+      
+      const resizedImageBase64 = await resizeImage(originalImageBase64, textureSize, textureSize);
+      setPixelArt(resizedImageBase64);
+
+      // ETAPA 4: Analisar Imagem
+      setLoadingStep("Analisando a qualidade da imagem...");
+      const imageAnalysisBase64 = resizedImageBase64.split(',')[1];
+      const imagePart = { inlineData: { mimeType: 'image/png', data: imageAnalysisBase64 }};
+      const textPart = { text: `Please analyze this ${textureSize}x${textureSize} pixel art image intended for a Minecraft addon based on the description: "${prompt}". Evaluate its quality, clarity, and adherence to the Minecraft art style. Provide a short, constructive critique.` };
+      const analysisResponse = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: { parts: [imagePart, textPart] },
+      });
+      setImageAnalysis(analysisResponse.text);
 
     } catch (err: any) {
       console.error(err);
