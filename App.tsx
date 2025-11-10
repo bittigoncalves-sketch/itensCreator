@@ -14,6 +14,7 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>(Page.CREATOR);
   const [initialPrompt, setInitialPrompt] = useState<string | null>(null);
   const [initialAddon, setInitialAddon] = useState<SavedAddon | null>(null);
+  const [isDebugMode, setIsDebugMode] = useState(() => localStorage.getItem('isDebugMode') === 'true');
 
   const handleLogin = () => {
     setIsLoggedIn(true);
@@ -34,6 +35,12 @@ const App: React.FC = () => {
     setInitialAddon(addon);
     setInitialPrompt(null);
     setCurrentPage(Page.CREATOR);
+  };
+
+  const toggleDebugMode = () => {
+    const newMode = !isDebugMode;
+    setIsDebugMode(newMode);
+    localStorage.setItem('isDebugMode', String(newMode));
   };
 
   if (!isLoggedIn) {
@@ -59,6 +66,11 @@ const App: React.FC = () => {
             <h1 className="text-xl font-bold tracking-tight text-gray-800 dark:text-gray-200">
               Criador de Add-ons
             </h1>
+            {isDebugMode && (
+              <span className="text-xs font-mono bg-orange-200 text-orange-800 dark:bg-orange-800 dark:text-orange-200 px-2 py-0.5 rounded-md">
+                DEBUG
+              </span>
+            )}
           </div>
           <nav className="flex items-center space-x-1 sm:space-x-2 bg-gray-200/50 dark:bg-gray-800/50 p-1 rounded-lg">
              <NavButton page={Page.CREATOR} label="Criador" />
@@ -83,11 +95,12 @@ const App: React.FC = () => {
               clearInitialPrompt={() => setInitialPrompt(null)} 
               initialAddon={initialAddon}
               clearInitialAddon={() => setInitialAddon(null)}
+              isDebugMode={isDebugMode}
             />}
           {currentPage === Page.MY_ADDONS && <MyAddonsPage onLoadAddon={handleLoadAddon} />}
           {currentPage === Page.COMMUNITY && <CommunityPage onSelectPrompt={handleSelectPrompt} />}
           {currentPage === Page.CHAT && <ChatPage />}
-          {currentPage === Page.SETTINGS && <SettingsPage onLogout={handleLogout} />}
+          {currentPage === Page.SETTINGS && <SettingsPage onLogout={handleLogout} isDebugMode={isDebugMode} onToggleDebugMode={toggleDebugMode} />}
         </div>
       </main>
     </div>

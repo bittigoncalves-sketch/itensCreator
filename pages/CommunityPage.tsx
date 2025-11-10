@@ -88,11 +88,61 @@ const LapisPickaxeIcon = () => (
   </svg>
 );
 
+const IceBowIcon = () => (
+    <svg width="64" height="64" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style={{imageRendering: 'pixelated'}}>
+        <path fill="#4B4B4B" d="M11 1h1v1h-1zM10 2h1v1h-1zM9 3h1v1H9zM8 4h1v1H8zM8 5h1v1H8zM8 6h1v1H8zM8 7h1v1H8zM8 8h1v1H8zM8 9h1v1H8zM8 10h1v1H8zM8 11h1v1H8zM9 12h1v1H9zM10 13h1v1h-1zM11 14h1v1h-1z"/>
+        <path fill="#7D7D7D" d="M12 2h1v1h-1zM11 3h1v1h-1zM10 4h1v1h-1zM9 5h1v1H9zM9 6h1v1H9zM9 7h1v1H9zM9 8h1v1H9zM9 9h1v1H9zM9 10h1v1H9zM10 11h1v1h-1zM11 12h1v1h-1zM12 13h1v1h-1z"/>
+        <path fill="#AEE8FF" d="M12 3h1v1h-1zm-1 1h1v1h-1zm-1 1h1v1h-1zm-1 3h1v1h-1zm0 1h1v1h-1zm-1 3h1v1h-1zm1 1h1v1h-1zm1 1h1v1h-1z"/>
+        <path fill="#D6F3FF" d="M11 4h1v1h-1zM10 5h1v1h-1zM10 6h1v1h-1zM10 7h1v1h-1zM10 8h1v1h-1zM10 9h1v1h-1zM10 10h1v1h-1zM11 11h1v1h-1z"/>
+        <path fill="#FFFFFF" d="M11 5h1v1h-1zM11 10h1v1h-1z"/>
+        <path fill="#C0C0C0" d="M10 1h1v1h-1zM4 3h1v1H4zM5 4h1v1H5zM6 5h1v1H6zM7 6h1v1H7zM7 7h1v1H7zM7 8h1v1H7zM7 9h1v1H7zM6 10h1v1H6zM5 11h1v1H5zM4 12h1v1H4zM10 14h1v1h-1z"/>
+    </svg>
+);
+
+const GlowingHoneyLoafIcon = () => (
+    <svg width="64" height="64" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style={{imageRendering: 'pixelated'}}>
+        <path fill="#85451A" d="M3 5h1v1H3zm8 0h1v1h-1zm-9 1h1v1H2zm10 0h1v1h-1zM2 7h1v1H2zm10 0h1v1h-1zM3 8h1v1H3zm8 0h1v1h-1zM4 9h1v1H4zm6 0h1v1h-1zM5 10h1v1H5zm4 0h1v1H9z"/>
+        <path fill="#A05220" d="M4 5h1v1H4zm6 0h1v1h-1zM3 6h1v1H3zm8 0h1v1h-1zM3 7h1v1H3zm8 0h1v1h-1zM4 8h1v1H4zm6 0h1v1h-1zM5 9h1v1H5zm4 0h1v1H9z"/>
+        <path fill="#D2691E" d="M5 5h5v1H5zM4 6h7v1H4zM4 7h7v1H4zM5 8h5v1H5zM6 9h3v1H6z"/>
+        <path fill="#FFA500" d="M6 6h3v1H6zM5 7h5v1H5zM6 8h3v1H6z"/>
+        <path fill="#FFD700" d="M7 7h1v1H7z"/>
+        <path fill="#FFFFE0" d="M8 7h1v1H8z"/>
+    </svg>
+);
+
+const GuardianHelmetIcon = () => (
+    <svg width="64" height="64" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style={{imageRendering: 'pixelated'}}>
+        <path fill="#2E5C53" d="M2 7h1v1H2zm10 0h1v1h-1zM3 8h1v1H3zm8 0h1v1h-1zM4 9h1v1H4zm6 0h1v1h-1zM5 10h5v1H5z"/>
+        <path fill="#468C7F" d="M3 7h1v1H3zm8 0h1v1h-1zM4 8h1v1H4zm6 0h1v1h-1zM5 9h5v1H5z"/>
+        <path fill="#69D5C3" d="M4 7h7v1H4zM5 8h5v1H5z"/>
+        <path fill="#9BFFE9" d="M5 7h5v1H5z"/>
+        <path fill="#D2691E" d="M7 4h1v1H7zM6 5h3v1H6zM5 6h5v1H5z"/>
+        <path fill="#FFA500" d="M7 5h1v1H7zM6 6h3v1H6z"/>
+    </svg>
+);
+
+const AmuletOfTeleportationIcon = () => (
+    <svg width="64" height="64" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style={{imageRendering: 'pixelated'}}>
+        <path fill="#FFD700" d="M4 3h1v1H4zm6 0h1v1h-1zM3 4h1v1H3zm8 0h1v1h-1zM3 5h1v1H3zm8 0h1v1h-1zM4 6h1v1H4zm6 0h1v1h-1z"/>
+        <path fill="#B8860B" d="M5 3h1v1H5zm4 0h1v1H9zM4 4h1v1H4zm6 0h1v1h-1zM4 5h1v1H4zm6 0h1v1h-1zM5 6h1v1H5zm4 0h1v1H9zM6 7h3v1H6z"/>
+        <path fill="#220022" d="M5 7h1v1H5zm3 0h1v1H8zM6 8h3v1H6zM5 9h5v1H5zM6 10h3v1H6z"/>
+        <path fill="#1A001A" d="M5 8h1v1H5zm3 0h1v1H8zM5 10h1v1H5zm3 0h1v1H8zM6 11h3v1H6z"/>
+        <path fill="#360036" d="M6 9h3v1H6z"/>
+        <path fill="#4D004D" d="M7 9h1v1H7z"/>
+        <path fill="#A020F0" d="M7 10h1v1H7z"/>
+        <path fill="#E6E6FA" d="M8 9h1v1H8z"/>
+    </svg>
+);
+
 const communityAddons = [
   { name: 'Espada de Esmeralda', prompt: 'Uma espada de esmeralda que dá 8 de dano e tem durabilidade de 2000.', icon: <EmeraldSwordIcon /> },
   { name: 'Maçã de Obsidiana', prompt: 'Uma maçã feita de obsidiana que dá ao jogador resistência ao fogo e lentidão por 2 minutos.', icon: <ObsidianAppleIcon /> },
   { name: 'Botas Velozes', prompt: 'Botas de couro que aumentam a velocidade do jogador em 20% quando equipadas.', icon: <LeatherBootsIcon /> },
   { name: 'Picareta de Lápis-lazúli', prompt: 'Uma picareta de lápis-lazúli que tem a mesma velocidade do ferro, mas encanta com mais facilidade.', icon: <LapisPickaxeIcon /> },
+  { name: 'Arco de Gelo', prompt: 'Um arco que atira flechas que aplicam lentidão IV por 5 segundos nos inimigos atingidos.', icon: <IceBowIcon /> },
+  { name: 'Pão de Mel Brilhante', prompt: 'Um pão de mel que, ao ser comido, restaura 8 de fome e dá o efeito de Brilho por 1 minuto.', icon: <GlowingHoneyLoafIcon /> },
+  { name: 'Elmo do Guardião', prompt: 'Um elmo feito com prismarinho que permite ao jogador respirar debaixo d\'água indefinidamente.', icon: <GuardianHelmetIcon /> },
+  { name: 'Amuleto do Teletransporte', prompt: 'Um amuleto raro que, quando usado, teletransporta o jogador 16 blocos para a frente. Tem 10 usos.', icon: <AmuletOfTeleportationIcon /> },
 ];
 
 
